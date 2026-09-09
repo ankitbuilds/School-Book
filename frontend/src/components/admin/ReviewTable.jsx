@@ -1,0 +1,156 @@
+import React, { useContext, useEffect, useState } from 'react'
+import { BookContext } from '../../context/School.jsx';
+import { MdDelete } from 'react-icons/md';
+import axios from "axios";
+import Review from '../frontend/Review.jsx';
+
+function ReviewTable({ render, setRender, isAllSelected, toggleSelectAll, toggleSelect, paginatedReviews, selectedIds }) {
+    const { user, setToastConfig, setShowToast } = useContext(BookContext);
+    const role = user?.role;
+
+    const publishReview = async (id) => {
+        if (window.confirm("Do you want to update this Review?")) {
+            try {
+                await axios.patch(`${import.meta.env.VITE_API}/api/review/${id}`, { approved: true });
+                // alert("Review has been updated successfully!");
+                setRender(true);
+                setToastConfig({
+                    type: "success",
+                    message: "Review has been updated successfully!",
+                });
+                setShowToast(true);
+            } catch (error) {
+                setToastConfig({
+                    type: "error",
+                    message: error.response?.data?.message || "Failed to update the review. Please try again.",
+                });
+                setShowToast(true);
+            }
+
+        }
+    };
+
+    const unpublishReview = async (id) => {
+        if (window.confirm("Do you want to update this Review?")) {
+            try {
+                await axios.patch(`${import.meta.env.VITE_API}/api/review/${id}`, { approved: false });
+                setRender(true);
+                // alert("Review has been updated successfully!");
+                setToastConfig({
+                    type: "success",
+                    message: "Review has been updated successfully!",
+                });
+                setShowToast(true);
+            } catch (error) {
+                setToastConfig({
+                    type: "error",
+                    message: error.response?.data?.message || "Failed to update the review. Please try again.",
+                });
+                setShowToast(true);
+            }
+        }
+    };
+    const truncateWords = (text, count = 10) => {
+        if (!text) return "";
+        const words = text.split(" ");
+        return words.length > count ? words.slice(0, count).join(" ") + "..." : text;
+    };
+    const deleteReview = async (id) => {
+        if (window.confirm("Do you want to delete this Review?")) {
+            try {
+                await axios.delete(`${import.meta.env.VITE_API}/api/review/${id}`);
+                setRender(true);
+                alert("Review has been deleted successfully!");
+                setToastConfig({
+                    type: "success",
+                    message: "Review has been deleted successfully!",
+                });
+                setShowToast(true);
+            } catch (error) {
+                setToastConfig({
+                    type: "error",
+                    message: error.response?.data?.message || "Failed to update the review. Please try again.",
+                });
+                setShowToast(true);
+            }
+        }
+    };
+
+
+    return (
+        <table className="min-w-full text-sm">
+            <thead>
+                <tr>
+                    <th className="px-4 py-3 text-left"><input type="checkbox" checked={isAllSelected} onChange={toggleSelectAll} className="h-4 w-4 rounded border-gray-300 hover:cursor-pointer" /></th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700">User Id</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700">Book Id</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700">Title</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700">Body</th>
+                    <th className="px-4 py-3 text-right font-semibold text-gray-700">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {paginatedReviews.length === 0 ? (
+                    <tr>
+                        <td colSpan={7} className="px-4 py-6 text-center text-gray-500">No reviews found.</td>
+                    </tr>
+                ) : (
+                    paginatedReviews.filter((user) => user.role != "admin").map((user) => {
+                        const isSelected = selectedIds.includes(user._id);
+                        return (
+                            <tr key={user._id} className="border-t border-gray-100 hover:bg-gray-50">
+                                <td className="px-4 py-3"><input type="checkbox" checked={isSelected} onChange={() => toggleSelect(user._id)} className="h-4 w-4 rounded border-gray-300 hover:cursor-pointer" /></td>
+                                <td className="px-4 py-3 text-gray-900 font-medium">
+                                    {user?.user?.username || "Loading..."}
+                                    <Review rating={user.rating} />
+                                </td>
+                                <td className="px-4 py-3 text-gray-700">
+                                    {user?.book?.name || "Loading..."}
+                                </td>
+                                <td className="px-4 py-3 text-gray-700">{user.title}</td>
+                                {/* <td className="px-4 py-3 text-gray-700">{user.body}</td> */}
+                                <td className="px-4 py-3 text-gray-700">
+                                    {/* Mobile (≤ md): show 10 words */}
+                                    <span className="block md:hidden">
+                                        {truncateWords(user.body, 10)}
+                                    </span>
+
+                                    {/* Desktop (md+): show full text */}
+                                    <span className="hidden md:block">
+                                        {user.body}
+                                    </span>
+                                </td>
+                                <td className="px-4 py-3 w-30 text-right">
+                                    <div className="flex items-center justify-end gap-3">
+                                        {user.approved == false &&
+                                            <button
+                                                onClick={() => publishReview(user._id)}
+                                                className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                            >Publish</button>
+                                        }
+                                        {user.approved == true &&
+                                            <button
+                                                onClick={() => unpublishReview(user._id)}
+                                                className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                            >Unpublish</button>
+                                        }
+                                        <button
+                                            onClick={() => deleteReview(user._id)}
+                                            className="inline-flex items-center justify-center rounded-md p-1.5 text-red-600 transition hover:bg-red-50 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-400"
+                                            aria-label="Delete review"
+                                        >
+                                            <MdDelete className="text-base" />
+                                        </button>
+                                    </div>
+                                </td>
+
+                            </tr>
+                        );
+                    })
+                )}
+            </tbody>
+        </table>
+    )
+}
+
+export default ReviewTable
