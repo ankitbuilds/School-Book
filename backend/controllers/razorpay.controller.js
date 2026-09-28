@@ -4,20 +4,62 @@ import { Order } from "../models/order.model.js";
 import { Payment } from "../models/payment.model.js";
 import { asyncHandler } from "../middlewares/asyncHandler.js";
 
-export const createRazorpayOrder = asyncHandler(async (req, res) => {
-    const { orderId } = req.body;
+// export const createRazorpayOrder = asyncHandler(async (req, res) => {
+//     const { orderId } = req.body;
 
-    const order = await Order.findById(orderId);
-    if (!order) return res.status(404).json({ message: "Order not found" });
+//     const order = await Order.findById(orderId);
+//     if (!order) return res.status(404).json({ message: "Order not found" });
 
-    const razorpayOrder = await razorpay.orders.create({
-        amount: Math.round(order.total * 100),
-        currency: "INR",
-        receipt: `ORD-${order.orderNumber}`,
-        notes: { orderId: order._id.toString() },
-    });
+//     const razorpayOrder = await razorpay.orders.create({
+//         amount: Math.round(order.total * 100),
+//         currency: "INR",
+//         receipt: `ORD-${order.orderNumber}`,
+//         notes: { orderId: order._id.toString() },
+//     });
 
-    res.json({ success: true, razorpayOrder });
+//     res.json({ success: true, razorpayOrder });
+// });
+
+export const createRazorpayOrder = asyncHandler (async(req, res) => {
+    try {
+        const { orderId } = req.body;
+
+        console.log("orderId:", orderId);
+
+        const order = await Order.findById(orderId);
+
+        if (!order) {
+            return res.status(404).json({
+                message: "Order not found",
+            });
+        }
+
+        console.log("order total:", order.total);
+
+        const razorpayOrder = await razorpay.orders.create({
+            amount: Math.round(order.total * 100),
+            currency: "INR",
+            receipt: `ORD-${order.orderNumber}`,
+            notes: {
+                orderId: order._id.toString(),
+            },
+        });
+
+        console.log("Razorpay response:", razorpayOrder);
+
+        return res.status(200).json({
+            success: true,
+            razorpayOrder,
+        });
+
+    } catch (error) {
+        console.error("RAZORPAY ERROR:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
 });
 
 export const verifyRazorpayPayment = asyncHandler(async (req, res) => {

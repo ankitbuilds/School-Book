@@ -36,6 +36,8 @@ function AddBook() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        const token = localStorage.getItem("token");
 
         try {
             const formData = new FormData();
@@ -57,6 +59,7 @@ function AddBook() {
             const res = await axios.post(`${import.meta.env.VITE_API}/api/book`, formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
+                    Authorization: `Bearer ${token}`,
                 },
             });
             setToastConfig({

@@ -82,19 +82,27 @@ function FCart() {
     const removeItemFromCart = async (bookId) => {
         if (!user) return;
 
+        // Find the item in the local state
         const item = cartItems.find(i => i.bookId === bookId);
         if (!item) return;
 
-        setCartItems(prev =>
-            prev.filter(i => i.bookId !== bookId)
-        );
+        // Optimistically update UI state
+        setCartItems(prev => prev.filter(i => i.bookId !== bookId));
 
         try {
-            await axios.post(`${import.meta.env.VITE_API}/api/cart`, {
-                userId: user.id,
-                bookId,
-                quantity: -item.quantity,
+            // 1. Get the token right before making the request
+            const token = localStorage.getItem("token");
+
+            // 2. Target the specific item ID in the database using a DELETE request
+            // NOTE: Use the database record ID (often item._id or item.id) rather than the generic bookId
+            const idToDelete = item._id || item.id || bookId;
+
+            await axios.delete(`${import.meta.env.VITE_API}/api/cart/${idToDelete}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`, // 3. Attached the missing token header
+                }
             });
+
             setToastConfig({
                 type: "info",
                 title: "Removed from cart",
@@ -102,6 +110,10 @@ function FCart() {
             });
         } catch (error) {
             console.error("Remove item failed:", error);
+
+            // Rollback state if the server request fails
+            setCartItems(prev => [...prev, item]);
+
             setToastConfig({
                 type: "error",
                 title: "Action failed",

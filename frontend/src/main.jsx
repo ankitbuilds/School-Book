@@ -55,7 +55,10 @@ import ChangePassword from './pages/frontend/ChangePassword.jsx'
 import AddAddress from './pages/frontend/AddAddress.jsx'
 import ResetPassword from './pages/frontend/ResetPassword.jsx'
 import { getAddress, getAddressById } from './data/address.js'
-
+import CategoriesPage from './pages/frontend/CategoriesPage.jsx'
+import BestSellersPage from './pages/frontend/BestSellersPage.jsx'
+import NewArrivalsPage from './pages/frontend/NewArrivalsPage.jsx'
+import OffersPage from './pages/frontend/OffersPage.jsx'
 
 const router = createBrowserRouter([
   {
@@ -66,6 +69,11 @@ const router = createBrowserRouter([
       { path: "", element: <Home /> },
       { path: "cart", element: <FCart /> },
       { path: "products/:id", element: <BookById />, loader: getBookById },
+      { path: "categories", element: <CategoriesPage /> },
+      { path: "categories/:categoryId", element: <CategoriesPage /> },
+      { path: "best-sellers", element: <BestSellersPage /> },
+      { path: "new-arrivals", element: <NewArrivalsPage /> },
+      { path: "offers", element: <OffersPage /> },
       { path: "contact", element: <Contact /> },
       { path: "checkout", element: <Checkout /> },
       { path: "reset-password", element: <ResetPassword /> },

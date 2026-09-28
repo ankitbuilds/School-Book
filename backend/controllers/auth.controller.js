@@ -38,6 +38,8 @@ function hashOTP(otp) {
 const handleAuthSignUp = asyncHandler(async (req, res) => {
     const { username, email, password, first_name, last_name } = req.body;
 
+    console.log("Signup Email & Password: ", {email, password})
+
     if (!username || !email || !password) {
         return res
             .status(400)
@@ -79,6 +81,7 @@ const handleAuthSignUp = asyncHandler(async (req, res) => {
 
 const handleAuthLogin = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
+    console.log("Login Email & Password: ", {email, password})
     if (!email || !password) {
         return res
             .status(400)

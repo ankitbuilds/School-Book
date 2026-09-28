@@ -8,6 +8,7 @@ function ProductCard({ book, rating = 0 }) {
     const { user, setCartItems, setToastConfig, setShowToast } = useContext(BookContext);
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const token = localStorage.getItem("token");
 
     const handleAddToCart = async () => {
         if (!user) return navigate("/login");
@@ -19,8 +20,8 @@ function ProductCard({ book, rating = 0 }) {
             const item = prev.find((i) => i.bookId === book._id);
             return item
                 ? prev.map((i) =>
-                      i.bookId === book._id ? { ...i, quantity: i.quantity + 1 } : i
-                  )
+                    i.bookId === book._id ? { ...i, quantity: i.quantity + 1 } : i
+                )
                 : [...prev, { bookId: book._id, quantity: 1, book }];
         });
 
@@ -29,7 +30,12 @@ function ProductCard({ book, rating = 0 }) {
                 userId: user.id,
                 bookId: book._id,
                 quantity: 1,
-            });
+            },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
             setToastConfig({
                 type: "success",
                 title: "Added to cart",
