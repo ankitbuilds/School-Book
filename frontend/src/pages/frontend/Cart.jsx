@@ -78,7 +78,7 @@ function FCart() {
             console.error("Quantity input update failed:", error);
         }
     };
-
+//remove button issue
     const removeItemFromCart = async (bookId) => {
         if (!user) return;
 
