@@ -19,7 +19,7 @@ export const createRazorpayOrder = asyncHandler(async (req, res) => {
 
     res.json({ success: true, razorpayOrder });
 });
-
+//razorpay payment
 export const verifyRazorpayPayment = asyncHandler(async (req, res) => {
     const {
         razorpay_order_id,
