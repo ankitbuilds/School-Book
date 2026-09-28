@@ -19,17 +19,27 @@ function ProductCard({ book, rating = 0 }) {
             const item = prev.find((i) => i.bookId === book._id);
             return item
                 ? prev.map((i) =>
-                      i.bookId === book._id ? { ...i, quantity: i.quantity + 1 } : i
-                  )
+                    i.bookId === book._id ? { ...i, quantity: i.quantity + 1 } : i
+                )
                 : [...prev, { bookId: book._id, quantity: 1, book }];
         });
 
         try {
-            await axios.post(`${import.meta.env.VITE_API}/api/cart`, {
-                userId: user.id,
-                bookId: book._id,
-                quantity: 1,
-            });
+            const token = localStorage.getItem("token");
+
+            await axios.post(
+                `${API}/api/cart`,
+                {
+                    userId: user.id,
+                    bookId: book.id,
+                    quantity: 1,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
             setToastConfig({
                 type: "success",
                 title: "Added to cart",

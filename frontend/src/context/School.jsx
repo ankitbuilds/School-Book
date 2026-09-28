@@ -76,8 +76,15 @@ export const BookProvider = ({ children }) => {
 
     const controller = new AbortController();
 
+    const token = localStorage.getItem("token");
+
     axios
-      .get(`${API}/api/address/user/${userId}`, { signal: controller.signal })
+      .get(`${API}/api/address/user/${userId}`, {
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
       .then(({ data }) =>
         setAddress(data.addresses?.find((a) => a.isDefault) || null)
       )
@@ -95,8 +102,8 @@ export const BookProvider = ({ children }) => {
   }, []);
 
   const value = useMemo(
-    () => ({ user, setUser, adminLogout,  books, setBooks, booksLoading, cartItems, setCartItems, address, setAddress, loading, setLoading, update, setUpdate, toastConfig, setToastConfig, showToast, setShowToast, }),
-    [ user, adminLogout, books, booksLoading, cartItems, address, loading, update, toastConfig, showToast ]
+    () => ({ user, setUser, adminLogout, books, setBooks, booksLoading, cartItems, setCartItems, address, setAddress, loading, setLoading, update, setUpdate, toastConfig, setToastConfig, showToast, setShowToast, }),
+    [user, adminLogout, books, booksLoading, cartItems, address, loading, update, toastConfig, showToast]
   );
 
   return <BookContext.Provider value={value}>{children}</BookContext.Provider>;
