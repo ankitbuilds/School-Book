@@ -227,9 +227,12 @@ function FCart() {
     const removeItemFromCart = async (bookId) => {
         if (!user) return;
 
-        const item = safeCartItems.find(
-            (i) => String(i.bookId) === String(bookId)
-        );
+        // Find the item in the local state
+        const item = cartItems.find(i => i.bookId === bookId);
+        if (!item) return;
+
+        // Optimistically update UI state
+        setCartItems(prev => prev.filter(i => i.bookId !== bookId));
 
         if (!item) return;
 
@@ -245,21 +248,18 @@ function FCart() {
         });
 
         try {
-            const token = getToken();
+            // 1. Get the token right before making the request
+            const token = localStorage.getItem("token");
 
-            await axios.post(
-                `${import.meta.env.VITE_API}/api/cart`,
-                {
-                    userId: user.id,
-                    bookId,
-                    quantity: -item.quantity,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+            // 2. Target the specific item ID in the database using a DELETE request
+            // NOTE: Use the database record ID (often item._id or item.id) rather than the generic bookId
+            const idToDelete = item._id || item.id || bookId;
+
+            await axios.delete(`${import.meta.env.VITE_API}/api/cart/${idToDelete}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`, // 3. Attached the missing token header
                 }
-            );
+            });
 
             setToastConfig({
                 type: "info",
@@ -267,19 +267,10 @@ function FCart() {
                 message: "The product has been removed from your cart.",
             });
         } catch (error) {
-            console.error(
-                "Remove item failed:",
-                error.response?.data || error.message
-            );
+            console.error("Remove item failed:", error);
 
-            // Restore item if API request fails
-            setCartItems((prev) => {
-                const items = Array.isArray(prev)
-                    ? prev
-                    : prev?.items || [];
-
-                return [...items, item];
-            });
+            // Rollback state if the server request fails
+            setCartItems(prev => [...prev, item]);
 
             setToastConfig({
                 type: "error",

@@ -8,6 +8,7 @@ function ProductCard({ book, rating = 0 }) {
     const { user, setCartItems, setToastConfig, setShowToast } = useContext(BookContext);
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const token = localStorage.getItem("token");
 
     const handleAddToCart = async () => {
         if (!user) return navigate("/login");
@@ -25,21 +26,16 @@ function ProductCard({ book, rating = 0 }) {
         });
 
         try {
-            const token = localStorage.getItem("token");
-
-            await axios.post(
-                `${API}/api/cart`,
-                {
-                    userId: user.id,
-                    bookId: book.id,
-                    quantity: 1,
-                },
+            await axios.post(`${import.meta.env.VITE_API}/api/cart`, {
+                userId: user.id,
+                bookId: book._id,
+                quantity: 1,
+            },
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
-                }
-            );
+                });
             setToastConfig({
                 type: "success",
                 title: "Added to cart",

@@ -5,6 +5,7 @@ import { getCartById } from "../data/cart.js";
 export const BookContext = createContext(null);
 
 const API = import.meta.env.VITE_API;
+const token = localStorage.getItem("token");
 
 export const BookProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -76,35 +77,35 @@ export const BookProvider = ({ children }) => {
 
     const controller = new AbortController();
 
-    const token = localStorage.getItem("token");
-
-    axios
-      .get(`${API}/api/address/user/${userId}`, {
+    axios.get(
+      `${API}/api/address/user/${userId}`,
+      {
         signal: controller.signal,
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      })
+      }
+    )
       .then(({ data }) =>
-        setAddress(data.addresses?.find((a) => a.isDefault) || null)
-      )
-      .catch(() => setAddress(null));
+      setAddress(data.addresses?.find((a) => a.isDefault) || null)
+    )
+    .catch(() => setAddress(null));
 
-    return () => controller.abort();
-  }, [userId, update]);
+  return () => controller.abort();
+}, [userId, update]);
 
-  const adminLogout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null);
-    setCartItems([]);
-    setAddress(null);
-  }, []);
+const adminLogout = useCallback(() => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  setUser(null);
+  setCartItems([]);
+  setAddress(null);
+}, []);
 
-  const value = useMemo(
-    () => ({ user, setUser, adminLogout, books, setBooks, booksLoading, cartItems, setCartItems, address, setAddress, loading, setLoading, update, setUpdate, toastConfig, setToastConfig, showToast, setShowToast, }),
-    [user, adminLogout, books, booksLoading, cartItems, address, loading, update, toastConfig, showToast]
-  );
+const value = useMemo(
+  () => ({ user, setUser, adminLogout, books, setBooks, booksLoading, cartItems, setCartItems, address, setAddress, loading, setLoading, update, setUpdate, toastConfig, setToastConfig, showToast, setShowToast, }),
+  [user, adminLogout, books, booksLoading, cartItems, address, loading, update, toastConfig, showToast]
+);
 
-  return <BookContext.Provider value={value}>{children}</BookContext.Provider>;
+return <BookContext.Provider value={value}>{children}</BookContext.Provider>;
 };
