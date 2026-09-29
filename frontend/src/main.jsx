@@ -59,6 +59,7 @@ import CategoriesPage from './pages/frontend/CategoriesPage.jsx'
 import BestSellersPage from './pages/frontend/BestSellersPage.jsx'
 import NewArrivalsPage from './pages/frontend/NewArrivalsPage.jsx'
 import OffersPage from './pages/frontend/OffersPage.jsx'
+import ReviewsPage from './pages/frontend/ReviewsPage.jsx'
 
 const router = createBrowserRouter([
   {
@@ -74,6 +75,7 @@ const router = createBrowserRouter([
       { path: "best-sellers", element: <BestSellersPage /> },
       { path: "new-arrivals", element: <NewArrivalsPage /> },
       { path: "offers", element: <OffersPage /> },
+      { path: "reviews", element: <ReviewsPage /> },
       { path: "contact", element: <Contact /> },
       { path: "checkout", element: <Checkout /> },
       { path: "reset-password", element: <ResetPassword /> },

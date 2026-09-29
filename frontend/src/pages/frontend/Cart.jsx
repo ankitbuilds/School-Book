@@ -15,17 +15,28 @@ function FCart() {
 
     const navigate = useNavigate();
 
+    // ==========================================
     // Make sure cartItems is always an array
+    // ==========================================
     const safeCartItems = Array.isArray(cartItems)
         ? cartItems
-        : cartItems?.items || [];
+        : Array.isArray(cartItems?.items)
+        ? cartItems.items
+        : Array.isArray(cartItems?.data)
+        ? cartItems.data
+        : [];
 
+    // ==========================================
+    // Calculate cart totals
+    // ==========================================
     const { totalItems, totalAmount } = useMemo(() => {
         return safeCartItems.reduce(
             (acc, item) => {
-                acc.totalItems += item.quantity || 0;
-                acc.totalAmount +=
-                    (item.quantity || 0) * (item.book?.price || 0);
+                const quantity = Number(item.quantity) || 0;
+                const price = Number(item.book?.price) || 0;
+
+                acc.totalItems += quantity;
+                acc.totalAmount += quantity * price;
 
                 return acc;
             },
@@ -36,14 +47,16 @@ function FCart() {
         );
     }, [safeCartItems]);
 
-    // Get token
+    // ==========================================
+    // Get authentication token
+    // ==========================================
     const getToken = () => {
         return localStorage.getItem("token");
     };
 
-    // --------------------------------
+    // ==========================================
     // Update quantity using + / -
-    // --------------------------------
+    // ==========================================
     const updateQuantity = async (bookId, delta) => {
         if (!user) return;
 
@@ -54,23 +67,28 @@ function FCart() {
         if (!item) return;
 
         // Don't allow quantity below 1
-        if (delta === -1 && item.quantity === 1) {
+        if (delta === -1 && item.quantity <= 1) {
             return;
         }
 
         // Don't allow quantity above stock
         if (
             delta === 1 &&
-            item.quantity >= item.book?.stockQty
+            item.book?.stockQty !== undefined &&
+            item.quantity >= item.book.stockQty
         ) {
             return;
         }
 
+        // ==========================================
         // Optimistic UI update
+        // ==========================================
         setCartItems((prev) => {
             const items = Array.isArray(prev)
                 ? prev
-                : prev?.items || [];
+                : Array.isArray(prev?.items)
+                ? prev.items
+                : [];
 
             return items.map((i) =>
                 String(i.bookId) === String(bookId)
@@ -104,11 +122,15 @@ function FCart() {
                 error.response?.data || error.message
             );
 
+            // ==========================================
             // Rollback UI if API fails
+            // ==========================================
             setCartItems((prev) => {
                 const items = Array.isArray(prev)
                     ? prev
-                    : prev?.items || [];
+                    : Array.isArray(prev?.items)
+                    ? prev.items
+                    : [];
 
                 return items.map((i) =>
                     String(i.bookId) === String(bookId)
@@ -123,16 +145,17 @@ function FCart() {
             setToastConfig({
                 type: "error",
                 title: "Action failed",
-                message: "Unable to update quantity. Please try again.",
+                message:
+                    "Unable to update quantity. Please try again.",
             });
 
             setShowToast(true);
         }
     };
 
-    // --------------------------------
+    // ==========================================
     // Update quantity using input
-    // --------------------------------
+    // ==========================================
     const updateQuantityByInput = async (bookId, value) => {
         if (!user) return;
 
@@ -144,24 +167,36 @@ function FCart() {
 
         let newQty = Number(value);
 
-        if (Number.isNaN(newQty)) return;
+        if (Number.isNaN(newQty)) {
+            return;
+        }
 
-        // Minimum = 1
-        // Maximum = available stock
-        newQty = Math.max(
-            1,
-            Math.min(newQty, item.book?.stockQty || 1)
-        );
+        const stockQty = Number(item.book?.stockQty);
+
+        // ==========================================
+        // Validate quantity
+        // ==========================================
+        newQty = Math.max(1, newQty);
+
+        if (!Number.isNaN(stockQty) && stockQty > 0) {
+            newQty = Math.min(newQty, stockQty);
+        }
 
         const delta = newQty - item.quantity;
 
-        if (delta === 0) return;
+        if (delta === 0) {
+            return;
+        }
 
+        // ==========================================
         // Optimistic UI update
+        // ==========================================
         setCartItems((prev) => {
             const items = Array.isArray(prev)
                 ? prev
-                : prev?.items || [];
+                : Array.isArray(prev?.items)
+                ? prev.items
+                : [];
 
             return items.map((i) =>
                 String(i.bookId) === String(bookId)
@@ -195,11 +230,15 @@ function FCart() {
                 error.response?.data || error.message
             );
 
+            // ==========================================
             // Rollback UI
+            // ==========================================
             setCartItems((prev) => {
                 const items = Array.isArray(prev)
                     ? prev
-                    : prev?.items || [];
+                    : Array.isArray(prev?.items)
+                    ? prev.items
+                    : [];
 
                 return items.map((i) =>
                     String(i.bookId) === String(bookId)
@@ -214,33 +253,35 @@ function FCart() {
             setToastConfig({
                 type: "error",
                 title: "Action failed",
-                message: "Unable to update quantity. Please try again.",
+                message:
+                    "Unable to update quantity. Please try again.",
             });
 
             setShowToast(true);
         }
     };
 
-    // --------------------------------
+    // ==========================================
     // Remove item from cart
-    // --------------------------------
+    // ==========================================
     const removeItemFromCart = async (bookId) => {
         if (!user) return;
 
-        // Find the item in the local state
-        const item = cartItems.find(i => i.bookId === bookId);
-        if (!item) return;
-
-        // Optimistically update UI state
-        setCartItems(prev => prev.filter(i => i.bookId !== bookId));
+        const item = safeCartItems.find(
+            (i) => String(i.bookId) === String(bookId)
+        );
 
         if (!item) return;
 
+        // ==========================================
         // Optimistically remove from UI
+        // ==========================================
         setCartItems((prev) => {
             const items = Array.isArray(prev)
                 ? prev
-                : prev?.items || [];
+                : Array.isArray(prev?.items)
+                ? prev.items
+                : [];
 
             return items.filter(
                 (i) => String(i.bookId) !== String(bookId)
@@ -248,50 +289,80 @@ function FCart() {
         });
 
         try {
-            // 1. Get the token right before making the request
-            const token = localStorage.getItem("token");
+            const token = getToken();
 
-            // 2. Target the specific item ID in the database using a DELETE request
-            // NOTE: Use the database record ID (often item._id or item.id) rather than the generic bookId
-            const idToDelete = item._id || item.id || bookId;
-
-            await axios.delete(`${import.meta.env.VITE_API}/api/cart/${idToDelete}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`, // 3. Attached the missing token header
+            // ==========================================
+            // Remove by decreasing quantity
+            // ==========================================
+            await axios.post(
+                `${import.meta.env.VITE_API}/api/cart`,
+                {
+                    userId: user.id,
+                    bookId,
+                    quantity: -item.quantity,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
                 }
-            });
+            );
 
             setToastConfig({
                 type: "info",
                 title: "Removed from cart",
-                message: "The product has been removed from your cart.",
+                message:
+                    "The product has been removed from your cart.",
             });
         } catch (error) {
-            console.error("Remove item failed:", error);
+            console.error(
+                "Remove item failed:",
+                error.response?.data || error.message
+            );
 
-            // Rollback state if the server request fails
-            setCartItems(prev => [...prev, item]);
+            // ==========================================
+            // Restore item if API request fails
+            // ==========================================
+            setCartItems((prev) => {
+                const items = Array.isArray(prev)
+                    ? prev
+                    : Array.isArray(prev?.items)
+                    ? prev.items
+                    : [];
+
+                const alreadyExists = items.some(
+                    (i) =>
+                        String(i.bookId) === String(bookId)
+                );
+
+                if (alreadyExists) {
+                    return items;
+                }
+
+                return [...items, item];
+            });
 
             setToastConfig({
                 type: "error",
                 title: "Action failed",
-                message: "Unable to remove the item. Please try again.",
+                message:
+                    "Unable to remove the item. Please try again.",
             });
         } finally {
             setShowToast(true);
         }
     };
 
-    // --------------------------------
+    // ==========================================
     // Checkout
-    // --------------------------------
+    // ==========================================
     const handleCheckout = () => {
         navigate("/checkout");
     };
 
-    // --------------------------------
+    // ==========================================
     // Empty cart
-    // --------------------------------
+    // ==========================================
     if (safeCartItems.length === 0) {
         return (
             <div className="min-h-[60vh] flex items-center justify-center">
@@ -302,6 +373,9 @@ function FCart() {
         );
     }
 
+    // ==========================================
+    // Render
+    // ==========================================
     return (
         <div className="bg-gray-50 py-10">
             <div className="max-w-6xl mx-auto px-4">
@@ -312,7 +386,9 @@ function FCart() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                    {/* Cart Items */}
+                    {/* ==============================
+                        Cart Items
+                    ============================== */}
                     <div className="lg:col-span-2 space-y-4">
 
                         {safeCartItems.map((item) => (
@@ -331,7 +407,9 @@ function FCart() {
 
                     </div>
 
-                    {/* Order Summary */}
+                    {/* ==============================
+                        Order Summary
+                    ============================== */}
                     <div className="bg-white rounded-xl border border-gray-300 shadow-sm p-5 h-fit">
 
                         <h2 className="text-lg font-semibold mb-4">
