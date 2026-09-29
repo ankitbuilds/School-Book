@@ -113,7 +113,9 @@ function BookById() {
         "@type": "Product",
         "@id": `https://schoolbook.lol/products/${book._id}`,
         name: book.name,
-        description: book.description.replace(/\r?\n|\r/g, " ").slice(0, 300),
+        description: String(book?.description || "")
+            .replace(/\r?\n|\r/g, " ")
+            .slice(0, 300),
         sku: book._id,
         // isbn: book.isbn,
         image: book.images?.map(img => img.url) || [book.coverImage],
