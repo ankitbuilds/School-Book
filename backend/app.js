@@ -3,6 +3,7 @@ import "dotenv/config";
 import compression from "compression";
 
 import { connectDB } from "./config/database.js";
+import redisClient from "./config/redis.js";
 import {
     corsMiddleware,
     helmetMiddleware,
@@ -53,6 +54,7 @@ app.use(async (req, res, next) => {
     }
 });
 
+await redisClient.connect();
 app.get("/api/stats", async (req, res, next) => {
     try {
         const [books, users, orders, carts, discounts, payments, reviews] =
